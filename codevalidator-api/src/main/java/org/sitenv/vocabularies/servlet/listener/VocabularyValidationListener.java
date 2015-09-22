@@ -1,21 +1,27 @@
 package org.sitenv.vocabularies.servlet.listener;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TreeSet;
+
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+
+import org.apache.log4j.Logger;
+import org.sitenv.vocabularies.engine.ValidationEngine;
+import org.sitenv.vocabularies.repository.VocabularyRepository;
+import org.sitenv.vocabularies.repository.VocabularyRepositoryConnectionInfo;
+
 import com.orientechnologies.orient.server.OServer;
 import com.orientechnologies.orient.server.OServerMain;
 import com.orientechnologies.orient.server.config.OServerConfiguration;
 import com.orientechnologies.orient.server.config.OServerConfigurationLoaderXml;
 import com.orientechnologies.orient.server.config.OServerStorageConfiguration;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import org.apache.log4j.Logger;
-import org.sitenv.vocabularies.engine.ValidationEngine;
-import org.sitenv.vocabularies.repository.VocabularyRepository;
-import org.sitenv.vocabularies.repository.VocabularyRepositoryConnectionInfo;
 
 public class VocabularyValidationListener implements ServletContextListener {
 
@@ -77,9 +83,10 @@ public class VocabularyValidationListener implements ServletContextListener {
 				String configFileName = props.getProperty("vocabulary.orientDbConfigFile");
 				String primaryDbName = props.getProperty("vocabulary.primaryDbName");
 				String secondaryDbName = props.getProperty("vocabulary.secondaryDbName");
+				
+				
 
-				OServerConfiguration serverConfiguration = new OServerConfiguration(new OServerConfigurationLoaderXml(OServerConfiguration.class,
-					new File(configFileName)));
+				OServerConfiguration serverConfiguration = new OServerConfigurationLoaderXml(OServerConfiguration.class, new File(configFileName)).load();
 				
 				server.startup(serverConfiguration);
 				
@@ -119,13 +126,24 @@ public class VocabularyValidationListener implements ServletContextListener {
 			String loadAtStartup = props.getProperty("vocabulary.loadVocabulariesAtStartup");
 			boolean startupLoader = true;
 			
+			Set<String> ignoredValueSets = null;
+			
+			String ignoredValueSetSourcesStr = props.getProperty("vocabulary.ignoreValueSetSources");
+			if (ignoredValueSetSourcesStr != null) {
+				String[] ignoredValueSetSourcesArray = ignoredValueSetSourcesStr.split(",");
+				if (ignoredValueSetSourcesArray != null) 
+				{
+					ignoredValueSets = new TreeSet<String>(Arrays.asList(ignoredValueSetSourcesArray));
+				}
+			}
+			
 			if (loadAtStartup != null)
 			{
 				startupLoader = Boolean.parseBoolean(loadAtStartup);
 			}
 			
 			logger.debug("Initializing the validation engine...");
-			ValidationEngine.initialize(props.getProperty("vocabulary.localCodeRepositoryDir"), props.getProperty("vocabulary.localValueSetRepositoryDir"), startupLoader);
+			ValidationEngine.initialize(props.getProperty("vocabulary.localCodeRepositoryDir"), props.getProperty("vocabulary.localValueSetRepositoryDir"), startupLoader, ignoredValueSets);
 			logger.debug("Validation Engine initialized...");
 			
 		}

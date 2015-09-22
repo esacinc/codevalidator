@@ -67,6 +67,7 @@ public class VocabularyRepository {
 	private OPartitionedDatabasePoolFactory connectionPoolFactory = new OPartitionedDatabasePoolFactory(2);
 	private OPartitionedDatabasePool primaryConnectionPool;
 	private OPartitionedDatabasePool secondaryConnectionPool;
+	private Set<String> ignoredValueSetSources;
 	
 	@SuppressWarnings("serial")
 	private Map<String, CodeModelDefinition<?>> codeModelDefinitions = new LinkedHashMap<String, CodeModelDefinition<?>>(){{
@@ -161,6 +162,19 @@ public class VocabularyRepository {
 		this.secondaryNodeCredentials = secondaryNodeCredentials;
 	}
 	
+	
+	
+	public Set<String> getIgnoredValueSetSources() {
+		return ignoredValueSetSources;
+	}
+
+
+	public void setIgnoredValueSetSources(Set<String> ignoredValueSetSources) {
+		
+		this.ignoredValueSetSources = ignoredValueSetSources;
+	}
+
+
 	public OObjectDatabaseTx getActiveDbConnection() {
 		return this.getDbConnection(true);
 	}
@@ -644,6 +658,21 @@ public class VocabularyRepository {
 	public Map<String, ValueSetModelDefinition<?>> getValueSetModelDefinitions() {
 		return this.valueSetModelDefinitions;
 	}
+	
+	public Map<String, ValueSetModelDefinition<?>> getNonIgnoredValueSetModelDefinitions() {
+		Map<String, ValueSetModelDefinition<?>> nonIgnoredDefinitions = new LinkedHashMap<String, ValueSetModelDefinition<?>>();
+		
+		for(String valueSetName : this.valueSetModelDefinitions.keySet())
+		{
+			if (this.ignoredValueSetSources != null && !this.ignoredValueSetSources.contains(valueSetName))
+			{
+				nonIgnoredDefinitions.put(valueSetName, this.valueSetModelDefinitions.get(valueSetName));
+			}
+		}
+		
+		return nonIgnoredDefinitions;
+	}
+
 
 	public Map<String, VocabularyLoader<?>> getCodeLoaders() {
 		return this.codeLoaders;

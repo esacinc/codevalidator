@@ -48,7 +48,7 @@ public abstract class ValidationEngine {
 	{
 		VocabularyRepository ds = VocabularyRepository.getInstance();
 		
-		for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+		for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 		{
 			if (ds.valueSetExists(valueSetModelDefinition.getModelClass(), valueSet))
 			{
@@ -337,7 +337,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null && code != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				List<? extends ValueSetCodeModel> modelList = ds.fetchByValueSetAndCode(valueSetModelDefinition.getModelClass(), valueSet, code);
 				
@@ -365,7 +365,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				Set<String> modelList = ds.fetchValueSetNamesByValueSet(valueSetModelDefinition.getModelClass(), valueSet);
 				
@@ -390,10 +390,10 @@ public abstract class ValidationEngine {
 		VocabularyRepository ds = VocabularyRepository.getInstance();
 		Set<String> result = null;
 		
-		if (ds != null && ds.getValueSetModelDefinitions() != null) {
+		if (ds != null && ds.getNonIgnoredValueSetModelDefinitions() != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				Set<String> modelList = ds.fetchValueSets(valueSetModelDefinition.getModelClass());
 				
@@ -421,7 +421,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null && description != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				List<? extends ValueSetCodeModel> modelList = ds.fetchByValueSetAndDescription(valueSetModelDefinition.getModelClass(), valueSet, description);
 				
@@ -449,7 +449,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				List<CodeSystemResult> modelList = ds.fetchCodeSystemsByValueSet(valueSetModelDefinition.getModelClass(), valueSet);
 				
@@ -509,7 +509,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null && code != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				List<? extends ValueSetCodeModel> modelList = ds.fetchByValueSetAndCode(valueSetModelDefinition.getModelClass(), valueSet, code);
 				
@@ -531,7 +531,7 @@ public abstract class ValidationEngine {
 		if (valueSet != null && code != null &&  ds != null) {
 			
 			
-			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getValueSetModelDefinitions().values())
+			for (ValueSetModelDefinition<?> valueSetModelDefinition : ds.getNonIgnoredValueSetModelDefinitions().values())
 			{
 				List<? extends ValueSetCodeModel> modelList = ds.fetchByValueSetCodeSystemAndCode(valueSetModelDefinition.getModelClass(), valueSet, codeSystem,
 					code);
@@ -547,7 +547,7 @@ public abstract class ValidationEngine {
 		return false;
 	}
 	
-	public static synchronized void initialize(String codeDirectory, String valueSetDirectory, boolean loadAtStartup) throws IOException {
+	public static synchronized void initialize(String codeDirectory, String valueSetDirectory, boolean loadAtStartup, Set<String> ignoredValueSetSources) throws IOException {
 		boolean recursive = true;
 		
 		// Validation Engine should load using the primary database (existing). This will kick off the loading of the secondary database and swap configs
@@ -559,6 +559,7 @@ public abstract class ValidationEngine {
 		initializer.setValueSetDirectory(valueSetDirectory);
 		initializer.setRecursive(recursive);
 		initializer.setLoadAtStartup(loadAtStartup);
+		initializer.setIgnoredValueSetSources(ignoredValueSetSources);
 		
 		initializer.start();
 	}
@@ -612,7 +613,7 @@ public abstract class ValidationEngine {
 		private String valueSetDirectory = null;
 		private boolean recursive = true;
 		private boolean loadAtStartup = false;
-		
+		private Set<String> ignoredValueSetSources = null;
 		
 		
 
@@ -654,8 +655,6 @@ public abstract class ValidationEngine {
 		
 		
 
-
-
 		public boolean isLoadAtStartup() {
 			return loadAtStartup;
 		}
@@ -664,6 +663,20 @@ public abstract class ValidationEngine {
 
 		public void setLoadAtStartup(boolean loadAtStartup) {
 			this.loadAtStartup = loadAtStartup;
+		}
+
+		
+		
+
+
+		public Set<String> getIgnoredValueSetSources() {
+			return ignoredValueSetSources;
+		}
+
+
+
+		public void setIgnoredValueSetSources(Set<String> ignoredValueSetSources) {
+			this.ignoredValueSetSources = ignoredValueSetSources;
 		}
 
 
@@ -677,6 +690,7 @@ public abstract class ValidationEngine {
 				if (loadAtStartup)
 				{
 					VocabularyRepository.getInstance().initializeDb(false);
+					VocabularyRepository.getInstance().setIgnoredValueSetSources(ignoredValueSetSources);
 					
 					if (codeDirectory != null && !codeDirectory.trim().equals(""))
 					{
