@@ -14,16 +14,22 @@ public abstract class Icd10Loader<T extends CodeModel> extends IcdLoader<T> {
 	@Override
 	protected boolean processLine(OObjectDatabaseTx dbConnection, ODocument doc, Map<String, String> baseFields, Map<String, String> fields, int lineIndex,
 		String line) {
+		String displayName = line.substring(16, 76).trim();
+		
 		fields.clear();
 		fields.put("code", buildDelimitedIcdCode(line.substring(6, 13).trim()));
-		fields.put("displayName", line.substring(16, 76).trim());
+		fields.put("displayName", displayName);
 		fields.putAll(baseFields);
 		
 		this.loadDocument(dbConnection, doc, fields);
 		
-		fields.put("displayName", line.substring(77).trim());
+		String preferredDisplayName = line.substring(77).trim();
 		
-		this.loadDocument(dbConnection, doc, fields);
+		if (!preferredDisplayName.isEmpty() && !displayName.equals(preferredDisplayName)) {
+			fields.put("displayName", preferredDisplayName);
+			
+			this.loadDocument(dbConnection, doc, fields);
+		}
 		
 		return true;
 	}

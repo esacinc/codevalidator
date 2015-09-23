@@ -5,6 +5,7 @@ import com.orientechnologies.orient.core.db.OPartitionedDatabasePoolFactory;
 import com.orientechnologies.orient.core.entity.OEntityManager;
 import com.orientechnologies.orient.core.index.OIndex;
 import com.orientechnologies.orient.core.index.OIndexManager;
+import com.orientechnologies.orient.core.index.OIndexManagerProxy;
 import com.orientechnologies.orient.core.metadata.OMetadata;
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OClass.INDEX_TYPE;
@@ -240,8 +241,15 @@ public class VocabularyRepository {
 	public <T extends CodeModel> OClass initializeModel(boolean clear, OEntityManager entityManager, OIndexManager indexManager, OSchema schema,
 		Class<T> modelClass) {
 		boolean valueSetModel = ValueSetCodeModel.class.isAssignableFrom(modelClass);
+		
+		schema.reload();
+		
 		OClass modelDbClass = buildDbClass(clear, entityManager, schema, modelClass, schema.getClass((valueSetModel ? ValueSetCodeModel.class :
 			CodeModel.class)));
+		
+		if (indexManager instanceof OIndexManagerProxy) {
+			((OIndexManagerProxy) indexManager).reload();
+		}
 		
 		buildDbProperty(clear, indexManager, modelDbClass, "code", OType.STRING, true, INDEX_TYPE.NOTUNIQUE_HASH_INDEX);
 		buildDbProperty(clear, indexManager, modelDbClass, "displayName", OType.STRING, false, INDEX_TYPE.NOTUNIQUE_HASH_INDEX);

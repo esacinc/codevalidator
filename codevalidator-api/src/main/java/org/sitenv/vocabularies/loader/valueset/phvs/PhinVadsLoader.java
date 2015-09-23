@@ -16,16 +16,25 @@ public class PhinVadsLoader extends DelimitedTextVocabularyLoader<PhinVadsModel>
 	protected boolean processLine(OObjectDatabaseTx dbConnection, ODocument doc, Map<String, String> baseFields, Map<String, String> fields, int lineIndex,
 		String line) {
 		String[] lineParts = StringUtils.splitPreserveAllTokens(line, "\t", 9);
+		String displayName = lineParts[1].trim();
 		
 		fields.clear();
 		fields.put("code", lineParts[0].trim());
-		fields.put("displayName", lineParts[1].trim());
+		fields.put("displayName", displayName);
 		fields.put("codeSystemId", lineParts[4].trim());
 		fields.put("codeSystemName", lineParts[5].trim());
 		fields.put("codeSystemVersion", lineParts[7].trim());
 		fields.putAll(baseFields);
-		
+
 		this.loadDocument(dbConnection, doc, fields);
+		
+		String preferredDisplayName = lineParts[2].trim();
+		
+		if (!preferredDisplayName.isEmpty() && !displayName.equals(preferredDisplayName)) {
+			fields.put("displayName", lineParts[2].trim());
+			
+			this.loadDocument(dbConnection, doc, fields);
+		}
 		
 		return true;
 	}
